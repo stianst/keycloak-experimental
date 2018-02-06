@@ -1,19 +1,18 @@
-NOTES
------
+# FIDO U2F Authenticator for Keycloak
+
+## Notes
 
 * Requires HTTPS. U2F will fail otherwise
-* Requires Theme Resource Provider SPI
+* Requires Theme Resource Provider SPI - not available in master yet (https://github.com/keycloak/keycloak/pull/4971)
 
-TODO
-----
+## TODO
 
 * Allow user to manage registrations through account management console
 * Attestation - allow specifying what devices should be supported 
 * Metadata - allow users to view metadata about registered devices
 * Allow admin to view details about registered devices
 
-Usage
------
+## Usage
 
 1. Deploy to Keycloak:
 
