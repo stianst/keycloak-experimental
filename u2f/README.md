@@ -1,3 +1,11 @@
+NOTES
+-----
+
+* Requires HTTPS. U2F will fail otherwise
+* Credentials are stored in-mem. Lost on KC restart
+* Requires Theme Resource Provider SPI
+
+
 TODO
 ----
 
@@ -21,5 +29,3 @@ Usage
 6. Logout
 
 7. Login again and you should now be requested to touch the U2F token to continue
-
-Notes - Temporary in-mem storage of U2F data including user creds! Lost on KC restart
