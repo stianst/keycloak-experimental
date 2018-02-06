@@ -4,6 +4,14 @@ NOTES
 * Requires HTTPS. U2F will fail otherwise
 * Requires Theme Resource Provider SPI
 
+TODO
+----
+
+* Allow user to manage registrations through account management console
+* Attestation - allow specifying what devices should be supported 
+* Metadata - allow users to view metadata about registered devices
+* Allow admin to view details about registered devices
+
 Usage
 -----
 
