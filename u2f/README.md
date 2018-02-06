@@ -2,14 +2,7 @@ NOTES
 -----
 
 * Requires HTTPS. U2F will fail otherwise
-* Credentials are stored in-mem. Lost on KC restart
 * Requires Theme Resource Provider SPI
-
-
-TODO
-----
-
-* Use credential provider to store credentials
 
 Usage
 -----

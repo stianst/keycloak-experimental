@@ -39,7 +39,6 @@
         <p>Touch token to login</p>
 
         <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-u2f-login-form" method="post">
-            <input type="hidden" name="username" value="${username}"/>
             <input type="hidden" name="tokenResponse" id="tokenResponse"/>
 
             <input style="display:none;" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>

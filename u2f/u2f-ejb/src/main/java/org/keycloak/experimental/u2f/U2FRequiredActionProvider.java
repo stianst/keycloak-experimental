@@ -26,6 +26,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.services.Urls;
 import org.keycloak.theme.Theme;
 
@@ -58,7 +59,6 @@ public class U2FRequiredActionProvider implements RequiredActionProvider {
             Response challenge = context.form()
                     .setAttribute("url", new UrlBean(context.getRealm(), context.getSession().theme().getTheme(Theme.Type.LOGIN), context.getSession().getContext().getUri().getBaseUri(), context.getActionUrl()))
                     .setAttribute("request", data)
-                    .setAttribute("username", context.getUser().getUsername())
                     .createForm("fido-u2f-register.ftl");
 
             context.challenge(challenge);
@@ -73,7 +73,6 @@ public class U2FRequiredActionProvider implements RequiredActionProvider {
 
         try {
             MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-            String username = formData.getFirst("username");
             String tokenResponse = formData.getFirst("tokenResponse");
 
             RegisterResponse response = RegisterResponse.fromJson(tokenResponse);
@@ -81,19 +80,16 @@ public class U2FRequiredActionProvider implements RequiredActionProvider {
             RegisterRequestData data = RegisterRequestData.fromJson(context.getAuthenticationSession().getAuthNote(U2F_REGISTRATION_DATA));
 
             DeviceRegistration registration = u2f.finishRegistration(data, response);
-            addRegistration(username, registration);
+
+            UserCredentialModel credentials = new UserCredentialModel();
+            credentials.setType(U2FCredentialProvider.TYPE);
+            credentials.setValue(registration.toJson());
+            context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), credentials);
 
             context.success();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void addRegistration(String username, DeviceRegistration registration) {
-        if (!TmpCredStore.creds.containsKey(username)) {
-            TmpCredStore.creds.put(username, new HashMap<>());
-        }
-        TmpCredStore.creds.get(username).put(registration.getKeyHandle(), registration.toJson());
     }
 
     @Override

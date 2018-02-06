@@ -23,9 +23,13 @@ import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.credential.UserCredentialStore;
+import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -34,6 +38,8 @@ import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.policy.PasswordPolicyManagerProvider;
+import org.keycloak.policy.PolicyError;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -43,9 +49,11 @@ import java.util.Set;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class U2FCredentialProvider implements CredentialProvider, CredentialInputValidator {
+public class U2FCredentialProvider implements CredentialProvider, CredentialInputValidator, CredentialInputUpdater, OnUserCache {
 
     private static final Logger logger = Logger.getLogger(U2FCredentialProvider.class);
+
+    public static final String TYPE = "u2f";
 
     private KeycloakSession session;
 
@@ -54,17 +62,60 @@ public class U2FCredentialProvider implements CredentialProvider, CredentialInpu
     }
 
     @Override
-    public boolean supportsCredentialType(String credentialType) {
-        return false;
-    }
-
-    @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
-        return false;
+        if (!supportsCredentialType(credentialType)) {
+            return false;
+        }
+
+        if (!TYPE.equals(credentialType)) {
+            return false;
+        }
+
+        return !session.userCredentialManager().getStoredCredentialsByType(realm, user, TYPE).isEmpty();
     }
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
-        return false;
+        throw new UnsupportedOperationException("Authenticator should validate credential");
     }
+
+    @Override
+    public boolean supportsCredentialType(String credentialType) {
+        return TYPE.equals(credentialType);
+    }
+
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!supportsCredentialType(input.getType())) return false;
+
+        CredentialModel model = new CredentialModel();
+        model.setType(TYPE);
+        model.setCreatedDate(Time.currentTimeMillis());
+        model.setValue(((UserCredentialModel) input).getValue());
+
+        session.userCredentialManager().createCredential(realm, user, model);
+
+        return true;
+    }
+
+    @Override
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+        if (!supportsCredentialType(credentialType)) {
+            return;
+        }
+
+        for (CredentialModel credential : session.userCredentialManager().getStoredCredentialsByType(realm, user, TYPE)) {
+            session.userCredentialManager().removeStoredCredential(realm, user, credential.getId());
+        }
+    }
+
+    @Override
+    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+        return isConfiguredFor(realm, user, TYPE) ? Collections.singleton(TYPE) : Collections.emptySet();
+    }
+
+    @Override
+    public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
+    }
+
 }
