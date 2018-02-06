@@ -1,40 +1,18 @@
 package org.keycloak.experimental.u2f;
 
-import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.theme.ThemeResourceProvider;
-import org.keycloak.theme.ThemeResourceProviderFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
-public class U2FThemeResourceProvider implements ThemeResourceProvider, ThemeResourceProviderFactory {
+public class U2FThemeResourceProvider implements ThemeResourceProvider {
 
-    @Override
-    public ThemeResourceProvider create(KeycloakSession session) {
-        return this;
-    }
+    private KeycloakSession session;
 
-    @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
-    }
-
-    @Override
-    public void close() {
-
-    }
-
-    @Override
-    public String getId() {
-        return "u2f-resources";
+    public U2FThemeResourceProvider(KeycloakSession session) {
+        this.session = session;
     }
 
     @Override
@@ -51,6 +29,10 @@ public class U2FThemeResourceProvider implements ThemeResourceProvider, ThemeRes
             return U2FThemeResourceProvider.class.getResourceAsStream(path);
         }
         return null;
+    }
+
+    @Override
+    public void close() {
     }
 
 }

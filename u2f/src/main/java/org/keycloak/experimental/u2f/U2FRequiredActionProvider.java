@@ -21,13 +21,12 @@ import com.yubico.u2f.U2F;
 import com.yubico.u2f.data.DeviceRegistration;
 import com.yubico.u2f.data.messages.RegisterRequestData;
 import com.yubico.u2f.data.messages.RegisterResponse;
-import org.keycloak.Config;
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.services.Urls;
 import org.keycloak.theme.Theme;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -38,26 +37,27 @@ import java.util.LinkedList;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class UpdateU2F implements RequiredActionProvider, RequiredActionFactory {
+public class U2FRequiredActionProvider implements RequiredActionProvider {
 
-    public static final String APP_ID = "https://localhost:8443";
+    private static final Logger logger = Logger.getLogger(U2FRequiredActionProvider.class);
+
+    public static final String U2F_REGISTRATION_DATA = "u2f-registration-data";
 
     private final U2F u2f = new U2F();
 
     @Override
-    public void evaluateTriggers(RequiredActionContext context) {
-    }
-
-    @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        try {
-            RegisterRequestData registerRequestData = u2f.startRegistration(APP_ID, new LinkedList<>());
+        logger.debugv("Sending registration, session: {0}", context.getAuthenticationSession().getParentSession().getId());
 
-            context.getAuthenticationSession().setAuthNote("u2f-registration-data", registerRequestData.toJson());
+        try {
+            String appId = UriUtils.getOrigin(context.getUriInfo().getBaseUri());
+            RegisterRequestData data = u2f.startRegistration(appId, new LinkedList<>());
+
+            context.getAuthenticationSession().setAuthNote(U2F_REGISTRATION_DATA, data.toJson());
 
             Response challenge = context.form()
                     .setAttribute("url", new UrlBean(context.getRealm(), context.getSession().theme().getTheme(Theme.Type.LOGIN), context.getSession().getContext().getUri().getBaseUri(), context.getActionUrl()))
-                    .setAttribute("request", registerRequestData)
+                    .setAttribute("request", data)
                     .setAttribute("username", context.getUser().getUsername())
                     .createForm("fido-u2f-register.ftl");
 
@@ -69,16 +69,18 @@ public class UpdateU2F implements RequiredActionProvider, RequiredActionFactory 
 
     @Override
     public void processAction(RequiredActionContext context) {
+        logger.debugv("Finish registration, session: {0}", context.getAuthenticationSession().getParentSession().getId());
+
         try {
             MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
             String username = formData.getFirst("username");
             String tokenResponse = formData.getFirst("tokenResponse");
 
-            RegisterResponse registerResponse = RegisterResponse.fromJson(tokenResponse);
+            RegisterResponse response = RegisterResponse.fromJson(tokenResponse);
 
-            RegisterRequestData registerRequestData = RegisterRequestData.fromJson(context.getAuthenticationSession().getAuthNote("u2f-registration-data"));
+            RegisterRequestData data = RegisterRequestData.fromJson(context.getAuthenticationSession().getAuthNote(U2F_REGISTRATION_DATA));
 
-            DeviceRegistration registration = u2f.finishRegistration(registerRequestData, registerResponse);
+            DeviceRegistration registration = u2f.finishRegistration(data, response);
             addRegistration(username, registration);
 
             context.success();
@@ -86,7 +88,6 @@ public class UpdateU2F implements RequiredActionProvider, RequiredActionFactory 
             throw new RuntimeException(e);
         }
     }
-
 
     private void addRegistration(String username, DeviceRegistration registration) {
         if (!TmpCredStore.creds.containsKey(username)) {
@@ -96,38 +97,11 @@ public class UpdateU2F implements RequiredActionProvider, RequiredActionFactory 
     }
 
     @Override
+    public void evaluateTriggers(RequiredActionContext context) {
+    }
+
+    @Override
     public void close() {
-
     }
 
-    @Override
-    public RequiredActionProvider create(KeycloakSession session) {
-        return this;
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
-    }
-
-    @Override
-    public String getDisplayText() {
-        return "Configure U2F";
-    }
-
-
-    @Override
-    public String getId() {
-        return "REGISTER_U2F";
-    }
-
-    @Override
-    public boolean isOneTimeAction() {
-        return true;
-    }
 }

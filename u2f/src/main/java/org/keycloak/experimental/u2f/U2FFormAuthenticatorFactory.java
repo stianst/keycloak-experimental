@@ -17,6 +17,7 @@
 
 package org.keycloak.experimental.u2f;
 
+import com.yubico.u2f.U2F;
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
@@ -34,32 +35,24 @@ import java.util.List;
  */
 public class U2FFormAuthenticatorFactory implements AuthenticatorFactory {
 
-    public static final String PROVIDER_ID = "u2f-form";
-    public static final U2FFormAuthenticator SINGLETON = new U2FFormAuthenticator();
+    public static final String ID = "u2f-form";
+
+    private final U2F u2f = new U2F();
+
+    private static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
+        AuthenticationExecutionModel.Requirement.REQUIRED,
+        AuthenticationExecutionModel.Requirement.OPTIONAL,
+        AuthenticationExecutionModel.Requirement.DISABLED
+    };
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return SINGLETON;
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-
-    }
-
-    @Override
-    public void close() {
-
+        return new U2FFormAuthenticator(u2f);
     }
 
     @Override
     public String getId() {
-        return PROVIDER_ID;
+        return ID;
     }
 
     @Override
@@ -76,11 +69,6 @@ public class U2FFormAuthenticatorFactory implements AuthenticatorFactory {
     public boolean isUserSetupAllowed() {
         return true;
     }
-
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED,
-            AuthenticationExecutionModel.Requirement.OPTIONAL,
-            AuthenticationExecutionModel.Requirement.DISABLED};
 
     @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
@@ -101,4 +89,17 @@ public class U2FFormAuthenticatorFactory implements AuthenticatorFactory {
     public List<ProviderConfigProperty> getConfigProperties() {
         return null;
     }
+
+    @Override
+    public void init(Config.Scope config) {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    public void close() {
+    }
+
 }

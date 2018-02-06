@@ -22,13 +22,18 @@ import com.yubico.u2f.data.DeviceRegistration;
 import com.yubico.u2f.data.messages.SignRequestData;
 import com.yubico.u2f.data.messages.SignResponse;
 import com.yubico.u2f.exceptions.U2fBadInputException;
+import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
+import org.keycloak.services.Urls;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -39,11 +44,19 @@ import java.util.List;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class U2FFormAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator {
-    private final U2F u2f = new U2F();
-    public static final String APP_ID = "https://localhost:8443";
+
+    private static final Logger logger = Logger.getLogger(U2FCredentialProvider.class);
+
+    private U2F u2f;
+
+    public U2FFormAuthenticator(U2F u2f) {
+        this.u2f = u2f;
+    }
 
     @Override
     public void action(AuthenticationFlowContext context) {
+        logger.debugv("Finish signature, session: {0}", context.getAuthenticationSession().getParentSession().getId());
+
         try {
             MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
             String username = formData.getFirst("username");
@@ -53,7 +66,7 @@ public class U2FFormAuthenticator extends AbstractUsernameFormAuthenticator impl
 
             SignRequestData signRequestData = SignRequestData.fromJson(context.getAuthenticationSession().getAuthNote("u2f-sign-data"));
 
-            DeviceRegistration registration = u2f.finishSignature(signRequestData, signResponse, getRegistrations(username));
+            u2f.finishSignature(signRequestData, signResponse, getRegistrations(username));
 
             context.success();
         } catch (Exception e) {
@@ -63,30 +76,29 @@ public class U2FFormAuthenticator extends AbstractUsernameFormAuthenticator impl
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        Response challengeResponse = challenge(context, null);
-        context.challenge(challengeResponse);
+        logger.debugv("Sending challenge, session: {0}", context.getAuthenticationSession().getParentSession().getId());
+
+        try {
+            String appId = UriUtils.getOrigin(context.getUriInfo().getBaseUri());
+            SignRequestData signRequestData = u2f.startSignature(appId, getRegistrations(context.getUser().getUsername()));
+
+            context.getAuthenticationSession().setAuthNote("u2f-sign-data", signRequestData.toJson());
+
+            Response response = context.form()
+                    .setAttribute("request", signRequestData)
+                    .setAttribute("username", context.getUser().getUsername())
+                    .createForm("fido-u2f-login.ftl");
+
+            context.challenge(response);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public boolean requiresUser() {
         return true;
     }
-
-    protected Response challenge(AuthenticationFlowContext context, String error) {
-        try {
-            SignRequestData signRequestData = u2f.startSignature(APP_ID, getRegistrations(context.getUser().getUsername()));
-
-            context.getAuthenticationSession().setAuthNote("u2f-sign-data", signRequestData.toJson());
-
-            LoginFormsProvider forms = context.form().setAttribute("request", signRequestData).setAttribute("username", context.getUser().getUsername());
-            if (error != null) forms.setError(error);
-
-            return forms.createForm("fido-u2f-login.ftl");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
 
     private Iterable<DeviceRegistration> getRegistrations(String username) throws U2fBadInputException {
         List<DeviceRegistration> registrations = new ArrayList<DeviceRegistration>();
@@ -103,14 +115,12 @@ public class U2FFormAuthenticator extends AbstractUsernameFormAuthenticator impl
 
     @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
-//        if (!user.getRequiredActions().contains(UserModel.RequiredAction.CONFIGURE_TOTP.name())) {
-//            user.addRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
-//        }
-
+        if (!user.getRequiredActions().contains(U2FRequiredActionProviderFactory.ID)) {
+            user.addRequiredAction(U2FRequiredActionProviderFactory.ID);
+        }
     }
 
     @Override
     public void close() {
-
     }
 }
