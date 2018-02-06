@@ -23,79 +23,50 @@
         <version>4.0.0.CR1-SNAPSHOT</version>
     </parent>
 
-    <name>FIDO u2f</name>
+    <name>FIDO U2F Parent</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>fido-u2f</artifactId>
-    <packaging>war</packaging>
+    <artifactId>fido-u2f-parent</artifactId>
+    <packaging>pom</packaging>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.yubico</groupId>
-            <artifactId>u2flib-server-core</artifactId>
-            <version>0.19.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-spi</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-spi-private</artifactId>
-            <version>${version.keycloak}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-services</artifactId>
-            <version>${version.keycloak}</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.keycloak.bom</groupId>
+                <artifactId>keycloak-spi-bom</artifactId>
+                <version>${version.keycloak}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak.experimental</groupId>
+                <artifactId>fido-u2f-ejb</artifactId>
+                <version>${project.version}</version>
+                <type>ejb</type>
+            </dependency>
+            <dependency>
+                <groupId>com.yubico</groupId>
+                <artifactId>u2flib-server-core</artifactId>
+                <version>0.19.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-server-spi-private</artifactId>
+                <scope>provided</scope>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-services</artifactId>
+                <scope>provided</scope>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
-    <build>
-        <finalName>fido-u2f</finalName>
-
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <configuration>
-                    <failOnMissingWebXml>false</failOnMissingWebXml><webResources>
-                    <resource>
-                        <directory>target/classes/META-INF</directory>
-                        <includes>
-                            <include>**/**</include>
-                        </includes>
-                        <targetPath>META-INF</targetPath>
-                    </resource>
-                </webResources>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.wildfly.plugins</groupId>
-                <artifactId>wildfly-maven-plugin</artifactId>
-                <configuration>
-                    <skip>false</skip>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <modules>
+        <module>u2f-ejb</module>
+        <module>u2f-ear</module>
+    </modules>
 </project>
