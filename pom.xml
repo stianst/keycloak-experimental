@@ -40,7 +40,7 @@
     </properties>
 
     <modules>
-        <module>u2f</module>
+        <module>fido-u2f</module>
     </modules>
 
     <build>
