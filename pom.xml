@@ -41,6 +41,7 @@
 
     <modules>
         <module>fido-u2f</module>
+        <module>magic-link</module>
     </modules>
 
     <build>
