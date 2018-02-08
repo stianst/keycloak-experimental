@@ -17,7 +17,6 @@
 
 package org.keycloak.experimental.magic;
 
-import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
@@ -25,51 +24,50 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class MagicLinkFormAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator {
 
-    private static final Logger logger = Logger.getLogger(MagicLinkFormAuthenticator.class);
-
     @Override
     public void action(AuthenticationFlowContext context) {
-        logger.debugv("Finish signature, session: {0}", context.getAuthenticationSession().getParentSession().getId());
+        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+        String email = formData.getFirst("email");
 
-        try {
-            // TODO
-            context.success();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        UserModel user = context.getSession().users().getUserByEmail(email, context.getRealm());
+        if (user == null) {
+            // Register user
+            user = context.getSession().users().addUser(context.getRealm(), email);
+            user.setEnabled(true);
+            user.setEmail(email);
+            user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
         }
+
+        context.setUser(user);
+        context.success();
     }
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        logger.debugv("Sending challenge, session: {0}", context.getAuthenticationSession().getParentSession().getId());
-
-        try {
-            // TODO
-            context.challenge(null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        Response response = context.form().createForm("login-email-only.ftl");
+        context.challenge(response);
     }
 
     @Override
     public boolean requiresUser() {
-        return true;
-    }
-
-    @Override
-    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        // TODO
         return false;
     }
 
     @Override
+    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        return true;
+    }
+
+    @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
-        // TODO
     }
 
     @Override
