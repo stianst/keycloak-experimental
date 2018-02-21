@@ -18,11 +18,16 @@
 package org.keycloak.experimental.magic;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.email.EmailException;
+import org.keycloak.email.EmailSenderProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -43,17 +48,43 @@ public class MagicLinkFormAuthenticator extends AbstractUsernameFormAuthenticato
             user = context.getSession().users().addUser(context.getRealm(), email);
             user.setEnabled(true);
             user.setEmail(email);
-            user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
+
+            // Uncomment the following line to require user to update profile on first login
+            // user.addRequiredAction(UserModel.RequiredAction.UPDATE_PROFILE);
+        }
+
+        String key = KeycloakModelUtils.generateId();
+        context.getAuthenticationSession().setAuthNote("email-key", key);
+
+        String link = KeycloakUriBuilder.fromUri(context.getRefreshExecutionUrl()).queryParam("key", key).build().toString();
+        String body = "<a href=\"" + link + "\">Click to login</a>";
+        try {
+            context.getSession().getProvider(EmailSenderProvider.class).send(context.getRealm().getSmtpConfig(), user, "Login link", null, body);
+        } catch (EmailException e) {
+            e.printStackTrace();
         }
 
         context.setUser(user);
-        context.success();
+        context.challenge(context.form().createForm("view-email.ftl"));
     }
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        Response response = context.form().createForm("login-email-only.ftl");
-        context.challenge(response);
+        String sessionKey = context.getAuthenticationSession().getAuthNote("email-key");
+        if (sessionKey != null) {
+            String requestKey = context.getHttpRequest().getUri().getQueryParameters().getFirst("key");
+            if (requestKey != null) {
+                if (requestKey.equals(sessionKey)) {
+                    context.success();
+                } else {
+                    context.failure(AuthenticationFlowError.INVALID_CREDENTIALS);
+                }
+            } else {
+                context.challenge(context.form().createForm("view-email.ftl"));
+            }
+        } else {
+            context.challenge(context.form().createForm("login-email-only.ftl"));
+        }
     }
 
     @Override
@@ -73,4 +104,5 @@ public class MagicLinkFormAuthenticator extends AbstractUsernameFormAuthenticato
     @Override
     public void close() {
     }
+
 }
