@@ -24,19 +24,22 @@ oc new-project $PROJECT
 
 oc replace -n $PROJECT --force -f https://raw.githubusercontent.com/jboss-openshift/application-templates/ose-v1.4.9/sso/sso72-image-stream.json
 
-sleep 10
+sleep 20
 
 oc -n $PROJECT import-image redhat-sso72-openshift:1.0
 
 ## Service account and secrets ##
 
-oc create serviceaccount sso-service-account
-oc policy add-role-to-user view system:serviceaccount:sso-app-demo:sso-service-account
+#oc create serviceaccount sso-service-account
+#oc policy add-role-to-user view system:serviceaccount:sso-app-demo:sso-service-account
+
+oc policy add-role-to-user view system:serviceaccount:$(oc project -q):default
 
 oc secret new sso-jgroup-secret jgroups.jceks
 oc secret new sso-ssl-secret keystore.jks truststore.jks
 
-oc secrets link sso-service-account sso-jgroup-secret sso-ssl-secret
+#oc secrets link sso-service-account sso-jgroup-secret sso-ssl-secret
+oc secrets link default sso-jgroup-secret sso-ssl-secret
 
 ## Create app ##
 
@@ -50,7 +53,8 @@ oc new-app -f sso72-mysql-persistent.json \
 -p SSO_TRUSTSTORE_SECRET=sso-ssl-secret \
 -p SSO_TRUSTSTORE_PASSWORD=$PW \
 -p JGROUPS_ENCRYPT_SECRET=sso-jgroup-secret \
--p JGROUPS_ENCRYPT_PASSWORD=$PW
+-p JGROUPS_ENCRYPT_PASSWORD=$PW \
+-p MEMORY_LIMIT=2Gi
 
 echo "Admin password $ADMIN_PW"
 
