@@ -41,6 +41,7 @@
 
     <modules>
         <module>fido-u2f</module>
+        <module>email-only</module>
         <module>magic-link</module>
         <module>themes</module>
     </modules>
