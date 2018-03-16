@@ -1,0 +1,42 @@
+{
+    "id": "summit",
+    "realm": "summit",
+    "enabled": true,
+    "sslRequired": "external",
+    "registrationAllowed": true,
+    "resetPasswordAllowed": true,
+    "editUsernameAllowed" : false,
+    "users" : [
+        {
+            "username" : "user",
+            "enabled": true,
+            "email" : "user@localhost",
+            "firstName": "Game",
+            "lastName": "User",
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "password" }
+            ]
+        }
+    ],
+    "clients": [
+        {
+            "clientId": "game",
+            "enabled": true,
+            "publicClient": true,
+            "standardFlowEnabled": true,
+            "implicitFlowEnabled": true,
+            "directAccessGrantsEnabled": false,
+            "serviceAccountsEnabled": false,
+            "rootUrl": "http://localhost:8080",
+            "baseUrl": "/",
+            "redirectUris": [
+                "/*"
+            ],
+            "webOrigins": [
+                "+"
+            ],
+            "protocol": "openid-connect"
+        }
+    ]
+}
