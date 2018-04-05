@@ -4,6 +4,7 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.services.Urls;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
@@ -47,7 +48,10 @@ public class TokenResource {
         Map<String, Object> attributes = new HashMap<String, Object>();
 
         try {
-            TokenVerifier<AccessToken> verifier = TokenVerifier.create(token, AccessToken.class);
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(token, AccessToken.class).withChecks(
+                    TokenVerifier.IS_ACTIVE,
+                    new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(session.getContext().getAuthServerUrl(), session.getContext().getRealm().getName()))
+            );
 
             attributes.put("token", token);
             attributes.put("header", JsonSerialization.writeValueAsPrettyString(verifier.getHeader()));
