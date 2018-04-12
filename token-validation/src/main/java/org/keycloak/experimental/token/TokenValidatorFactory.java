@@ -25,7 +25,7 @@ public class TokenValidatorFactory implements RealmResourceProviderFactory, Real
     }
 
     public String getId() {
-        return "token-validator";
+        return "jwt";
     }
 
     public Object getResource() {
