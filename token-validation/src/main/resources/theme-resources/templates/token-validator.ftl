@@ -23,7 +23,7 @@
 
         @media (min-width: 1200px) {
             textarea#token {
-                height: 40em;
+                height: 35em;
             }
         }
 
