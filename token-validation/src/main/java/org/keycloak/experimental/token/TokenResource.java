@@ -2,6 +2,7 @@ package org.keycloak.experimental.token;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
@@ -37,15 +38,21 @@ public class TokenResource {
 
     @GET
     public Response getForm() throws IOException, FreeMarkerException {
-        String response = freemarker.processTemplate(null, "token-validator.ftl", theme);
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("properties", theme.getProperties());
+        attributes.put("url", new UrlBean(session.getContext().getRealm(), theme, session.getContext().getAuthServerUrl(), null));
+
+        String response = freemarker.processTemplate(attributes, "token-validator.ftl", theme);
         return Response.ok(response).build();
     }
 
     @POST
-    public Response parseToken(@FormParam("token") String token) throws FreeMarkerException {
+    public Response parseToken(@FormParam("token") String token) throws IOException, FreeMarkerException {
         token = token.trim();
 
         Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put("properties", theme.getProperties());
+        attributes.put("url", new UrlBean(session.getContext().getRealm(), theme, session.getContext().getAuthServerUrl(), null));
 
         try {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(token, AccessToken.class).withChecks(
@@ -74,11 +81,9 @@ public class TokenResource {
                 attributes.put("error", "Key not found");
             }
 
-        } catch (VerificationException e) {
+        } catch (Exception e) {
             attributes.put("valid", Boolean.FALSE);
             attributes.put("error", e.getMessage());
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         return Response.ok(freemarker.processTemplate(attributes, "token-validator.ftl", theme)).build();
