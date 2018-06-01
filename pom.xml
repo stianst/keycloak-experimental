@@ -35,13 +35,13 @@
     </licenses>
 
     <properties>
-        <version.keycloak>4.0.0.Beta1</version.keycloak>
+        <version.keycloak>4.0.0.Beta3</version.keycloak>
         <version.wildfly.maven.plugin>1.1.0.Final</version.wildfly.maven.plugin>
     </properties>
 
     <modules>
+        <module>cluster-info</module>
         <module>fido-u2f</module>
-        <module>email-only</module>
         <module>magic-link</module>
         <module>themes</module>
         <module>token-validation</module>
