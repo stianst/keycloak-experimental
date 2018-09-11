@@ -1,14 +1,14 @@
 package org.keycloak.experimental.token;
 
-import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
-import org.keycloak.common.VerificationException;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -22,7 +22,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
-import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,47 +70,45 @@ public class TokenResource {
             attributes.put("tokenParsed", JsonSerialization.writeValueAsPrettyString(verifier.getToken()));
 
             String kid = verifier.getHeader().getKeyId();
+            String algorithm = verifier.getHeader().getAlgorithm().name();
 
-            PublicKey publicKey = session.keys().getRsaPublicKey(session.getContext().getRealm(), kid);
-            verifier.publicKey(publicKey);
+            SignatureProvider provider = session.getProvider(SignatureProvider.class, algorithm);
+            SignatureVerifierContext verifierContext = provider.verifier(kid);
 
-            String activeKid = session.keys().getActiveRsaKey(session.getContext().getRealm()).getKid();
+            verifier.verifierContext(verifierContext);
 
-            if (publicKey != null) {
-                verifier.verify();
+            String activeKid = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, algorithm).getKid();
 
-                UserSessionModel userSession = session.sessions().getUserSession(session.getContext().getRealm(), verifier.getToken().getSessionState());
-                if (!AuthenticationManager.isSessionValid(session.getContext().getRealm(), userSession)) {
-                    throw new Exception("Session not active");
-                }
+            verifier.verify();
 
-                UserModel user = userSession.getUser();
-                if (user == null) {
-                    throw new Exception("Unknown user");
-                }
-
-                if (!user.isEnabled()) {
-                    throw new Exception("User disabled");
-                }
-
-                ClientModel client = session.getContext().getRealm().getClientByClientId(verifier.getToken().getIssuedFor());
-
-                if (verifier.getToken().getIssuedAt() < client.getNotBefore()) {
-                    throw new Exception("Stale token");
-                }
-                if (verifier.getToken().getIssuedAt() < session.getContext().getRealm().getNotBefore()) {
-                    throw new Exception("Stale token");
-                }
-                if (verifier.getToken().getIssuedAt() < session.users().getNotBeforeOfUser(session.getContext().getRealm(), user)) {
-                    throw new Exception("Stale token");
-                }
-
-                attributes.put("valid", Boolean.TRUE);
-                attributes.put("activeKey", activeKid.equals(kid));
-            } else {
-                attributes.put("valid", Boolean.FALSE);
-                attributes.put("error", "Key not found");
+            UserSessionModel userSession = session.sessions().getUserSession(session.getContext().getRealm(), verifier.getToken().getSessionState());
+            if (!AuthenticationManager.isSessionValid(session.getContext().getRealm(), userSession)) {
+                throw new Exception("Session not active");
             }
+
+            UserModel user = userSession.getUser();
+            if (user == null) {
+                throw new Exception("Unknown user");
+            }
+
+            if (!user.isEnabled()) {
+                throw new Exception("User disabled");
+            }
+
+            ClientModel client = session.getContext().getRealm().getClientByClientId(verifier.getToken().getIssuedFor());
+
+            if (verifier.getToken().getIssuedAt() < client.getNotBefore()) {
+                throw new Exception("Stale token");
+            }
+            if (verifier.getToken().getIssuedAt() < session.getContext().getRealm().getNotBefore()) {
+                throw new Exception("Stale token");
+            }
+            if (verifier.getToken().getIssuedAt() < session.users().getNotBeforeOfUser(session.getContext().getRealm(), user)) {
+                throw new Exception("Stale token");
+            }
+
+            attributes.put("valid", Boolean.TRUE);
+            attributes.put("activeKey", activeKid.equals(kid));
 
         } catch (Exception e) {
             attributes.put("valid", Boolean.FALSE);

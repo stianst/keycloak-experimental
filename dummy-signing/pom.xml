@@ -18,48 +18,56 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>fido-u2f-parent</artifactId>
         <groupId>org.keycloak.experimental</groupId>
+        <artifactId>keycloak-experimental-parent</artifactId>
         <version>0.1-SNAPSHOT</version>
     </parent>
 
-    <name>FIDO U2F EAR</name>
+    <name>Dummy Token Signer</name>
     <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>fido-u2f-ear</artifactId>
-    <packaging>ear</packaging>
+    <artifactId>dummy-signing</artifactId>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
-            <groupId>org.keycloak.experimental</groupId>
-            <artifactId>fido-u2f-ejb</artifactId>
-            <type>ejb</type>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <version>${version.keycloak}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.yubico</groupId>
-            <artifactId>u2flib-server-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi</artifactId>
+            <version>${version.keycloak}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi-private</artifactId>
+            <version>${version.keycloak}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
+            <version>${version.keycloak}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
     <build>
-        <finalName>fido-u2f</finalName>
+        <finalName>dummy-signing</finalName>
 
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-ear-plugin</artifactId>
-                <version>2.10</version>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
                 <configuration>
-                    <version>7</version>
-                    <defaultLibBundleDir>lib</defaultLibBundleDir>
-                    <fileNameMapping>no-version</fileNameMapping>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>
