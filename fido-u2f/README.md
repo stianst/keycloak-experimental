@@ -3,7 +3,6 @@
 ## Notes
 
 * Requires HTTPS. U2F will fail otherwise
-* Requires Theme Resource Provider SPI - not available in master yet (https://github.com/keycloak/keycloak/pull/4971)
 
 ## TODO
 
