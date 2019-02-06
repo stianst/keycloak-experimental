@@ -42,7 +42,7 @@
             <dependency>
                 <groupId>org.keycloak.experimental</groupId>
                 <artifactId>fido-u2f-ejb</artifactId>
-                <version>${project.version}</version>
+                <version>${version.keycloak}</version>
                 <type>ejb</type>
             </dependency>
             <dependency>
@@ -54,13 +54,13 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-server-spi-private</artifactId>
                 <scope>provided</scope>
-                <version>${project.version}</version>
+                <version>${version.keycloak}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-services</artifactId>
                 <scope>provided</scope>
-                <version>${project.version}</version>
+                <version>${version.keycloak}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

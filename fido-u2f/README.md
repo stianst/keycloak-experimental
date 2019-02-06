@@ -19,7 +19,20 @@
 
 2. Login to admin console and create authentication flow with U2F
 
+   * Go to Authentication
+   * Under Flows select Browser and click Copy
+   * Remove OTP Form under Copy Of Browser Forms and add U2F in same place
+   * Mark U2F as optional
+   * Click Bindings and switch Browser Flow to Copy of browser
+   * Click Required Actions and Register
+   * Select Register U2F and click Ok
+
 3. Add `Configure U2F` required action to admin user
+
+   * Go to Users
+   * View all users
+   * Click admin
+   * In Required User Actions add Register U2F
 
 4. Logout
 

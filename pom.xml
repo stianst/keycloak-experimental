@@ -35,13 +35,12 @@
     </licenses>
 
     <properties>
-        <version.keycloak>4.3.0.Final-SNAPSHOT</version.keycloak>
+        <version.keycloak>4.8.3.Final</version.keycloak>
         <version.wildfly.maven.plugin>1.1.0.Final</version.wildfly.maven.plugin>
     </properties>
 
     <modules>
         <module>cluster-info</module>
-        <module>dummy-signing</module>
         <module>fido-u2f</module>
         <module>magic-link</module>
         <module>themes</module>

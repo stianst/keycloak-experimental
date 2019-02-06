@@ -35,6 +35,7 @@
             <groupId>org.keycloak.experimental</groupId>
             <artifactId>fido-u2f-ejb</artifactId>
             <type>ejb</type>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.yubico</groupId>
