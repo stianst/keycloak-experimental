@@ -8,6 +8,8 @@ Screencast available here: https://youtu.be/oyUsI3QgEq8
 
 ## Usage
 
+<!-- is there a way to install this with the `theme-resources` without mvn? just adding the jar and running the jboss cli to add the module and extend the standalone-ha.xml. we add it to providers `/subsystem=keycloak-server:list-add(name=providers...` but don't know where/how to link the templates...?! just a hint would help me, then i'm happy to create clean MR with documentation :) -->
+
 1. Deploy to Keycloak:
 
     mvn clean install wildfly:deploy
