@@ -35,8 +35,9 @@
     </licenses>
 
     <properties>
-        <version.keycloak>4.8.3.Final</version.keycloak>
-        <version.wildfly.maven.plugin>1.1.0.Final</version.wildfly.maven.plugin>
+        <version.keycloak>16.1.1</version.keycloak>
+        <version.wildfly.maven.plugin>2.1.0.Final</version.wildfly.maven.plugin>
+        <resteasy.version>4.7.4.Final</resteasy.version>
     </properties>
 
     <modules>
